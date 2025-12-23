@@ -36,6 +36,9 @@ def build_flex_contents():
     }
     return flex
 
+print("DEBUG USER_ID:", USER_ID)
+print("DEBUG TOKEN:", CHANNEL_ACCESS_TOKEN[:10])
+
 def send_flex_message():
     flex_contents = build_flex_contents()
 
