@@ -6,7 +6,7 @@ CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 USER_ID = os.getenv("LINE_USER_ID")
 
 def build_flex_contents():
-    flex = {
+    bubble = {
         "type": "bubble",
         "hero": {
             "type": "image",
@@ -34,10 +34,13 @@ def build_flex_contents():
             ]
         }
     }
-    return flex
 
-print("DEBUG USER_ID:", USER_ID)
-print("DEBUG TOKEN:", CHANNEL_ACCESS_TOKEN[:10])
+    flex = {
+        "type": "carousel",
+        "contents": [bubble]
+    }
+
+    return flex
 
 def send_flex_message():
     flex_contents = build_flex_contents()
@@ -57,6 +60,10 @@ def send_flex_message():
             }
         ]
     }
+
+    print("DEBUG USER_ID:", USER_ID)
+    print("DEBUG TOKEN:", CHANNEL_ACCESS_TOKEN[:10])
+    print("DEBUG Payload:", json.dumps(payload, ensure_ascii=False, indent=2))
 
     resp = requests.post(url, headers=headers, data=json.dumps(payload))
     print("Status:", resp.status_code, resp.text)
