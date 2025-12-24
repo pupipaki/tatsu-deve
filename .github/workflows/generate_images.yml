@@ -1,0 +1,39 @@
+name: Generate Weekly Images
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"  # 毎週月曜9:00 JST
+  workflow_dispatch:
+
+jobs:
+  generate-images:
+    runs-on: ubuntu-latest
+
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install openai
+
+      - name: Generate images
+        run: |
+          mkdir -p images
+          python generate_images.py
+
+      - name: Commit and push images
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add images/*.png
+          git commit -m "Weekly image update"
+          git push
