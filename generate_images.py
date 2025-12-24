@@ -12,8 +12,6 @@ PROMPTS = {
 }
 
 def generate_image(genre: str, output_path: str):
-    """ジャンル別に画像を生成し、ローカルに保存する"""
-
     prompt = PROMPTS.get(genre)
     if not prompt:
         raise ValueError(f"Unknown genre: {genre}")
@@ -21,18 +19,23 @@ def generate_image(genre: str, output_path: str):
     print(f"Generating image for genre: {genre}")
 
     response = client.images.generate(
-        model="gpt-image-1",
+        model="dall-e-3",
         prompt=prompt,
-        size="1024x1024"
+        size="1024x1024",
+        response_format="b64_json"
     )
 
-    # base64データを取り出す
     image_base64 = response.data[0].b64_json
     image_bytes = base64.b64decode(image_base64)
 
-    # 保存
     with open(output_path, "wb") as f:
         f.write(image_bytes)
 
     print(f"Saved: {output_path}")
-    return output_path
+
+if __name__ == "__main__":
+    os.makedirs("images", exist_ok=True)
+    generate_image("mr", "images/mr.png")
+    generate_image("composition", "images/composition.png")
+    generate_image("video", "images/video.png")
+    generate_image("boardgame", "images/boardgame.png")
