@@ -1,5 +1,7 @@
 import os
 import replicate
+import time
+
 
 client = replicate.Client(api_token=os.getenv("REPLICATE_API_TOKEN"))
 
@@ -48,9 +50,13 @@ def generate_image(genre: str, output_path: str):
 
     print(f"Saved: {output_path}")
 
+
 if __name__ == "__main__":
     os.makedirs("images", exist_ok=True)
     generate_image("mr", "images/mr.png")
+    time.sleep(10)
     generate_image("composition", "images/composition.png")
+    time.sleep(10)
     generate_image("video", "images/video.png")
+    time.sleep(10)
     generate_image("boardgame", "images/boardgame.png")
