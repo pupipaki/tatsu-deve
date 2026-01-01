@@ -17,23 +17,23 @@ def generate_image(genre: str, output_path: str):
 
     print(f"Generating image for genre: {genre}")
 
-    model = replicate.models.get("stability-ai/sdxl")
-    version = model.versions.get("5c7d5c6e0c6e4e3e8b7e8f7e8b7e8f7e")  # SDXLの安定版
+    # model = replicate.models.get("stability-ai/sdxl")
+    # version = model.versions.get("5c7d5c6e0c6e4e3e8b7e8f7e8b7e8f7e")  # SDXLの安定版
 
 
-    output = version.predict(
-        prompt=prompt,
-        width=1024,
-        height=1024
-    )
-    # output = replicate.run(
-    #   "google/imagen-4",
-    #   input={
-    #     "prompt": prompt,
-    #     "aspect_ratio": "16:9",
-    #     "safety_filter_level": "block_medium_and_above"
-    #   }
+    # output = version.predict(
+    #     prompt=prompt,
+    #     width=1024,
+    #     height=1024
     # )
+    output = replicate.run(
+      "google/imagen-4",
+      input={
+        "prompt": prompt,
+        "aspect_ratio": "16:9",
+        "safety_filter_level": "block_medium_and_above"
+      }
+    )
 
 
 
