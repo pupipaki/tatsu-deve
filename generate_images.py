@@ -1,6 +1,8 @@
 import os
 import replicate
 
+client = replicate.Client(api_token=os.getenv("REPLICATE_API_TOKEN"))
+
 PROMPTS = {
     "mr": "abstract soft emotional artwork, warm light particles, japanese pop-rock mood, cinematic, high detail",
     "composition": "abstract visualization of music composition, flowing waveforms, harmonic colors, layered gradients",
@@ -19,19 +21,19 @@ def generate_image(genre: str, output_path: str):
     # version = model.versions.get("5c7d5c6e0c6e4e3e8b7e8f7e8b7e8f7e")  # SDXLの安定版
 
 
-    # output = version.predict(
-    #     prompt=prompt,
-    #     width=1024,
-    #     height=1024
-    # )
-    output = replicate.run(
-      "google/imagen-4",
-      input={
-        "prompt": prompt,
-        "aspect_ratio": "16:9",
-        "safety_filter_level": "block_medium_and_above"
-      }
+    output = version.predict(
+        prompt=prompt,
+        width=1024,
+        height=1024
     )
+    # output = replicate.run(
+    #   "google/imagen-4",
+    #   input={
+    #     "prompt": prompt,
+    #     "aspect_ratio": "16:9",
+    #     "safety_filter_level": "block_medium_and_above"
+    #   }
+    # )
 
 
 
