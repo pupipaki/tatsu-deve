@@ -93,7 +93,7 @@ def send_flex():
     }
 
     body = {
-        "to": userid,
+        "to": USER_ID,
         "messages": [flex]
     }
 
