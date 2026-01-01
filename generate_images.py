@@ -1,14 +1,11 @@
 import os
-import base64
-from openai import OpenAI
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+import replicate
 
 PROMPTS = {
-    "mr": "A soft, emotional abstract artwork inspired by nostalgic Japanese pop-rock. Warm light particles, gentle gradients, transparent layers, subtle motion.",
-    "composition": "An abstract visualization of music composition. Flowing waveforms, harmonic structures, layered colors, creative energy.",
-    "video": "A cinematic abstract artwork inspired by video editing. Lens flares, color grading tones, timeline-like patterns, dynamic motion.",
-    "boardgame": "A strategic abstract artwork inspired by board games. Geometric shapes, tension, contrast, layered grids, subtle complexity."
+    "mr": "abstract soft emotional artwork, warm light particles, japanese pop-rock mood, cinematic, high detail",
+    "composition": "abstract visualization of music composition, flowing waveforms, harmonic colors, layered gradients",
+    "video": "cinematic abstract artwork inspired by video editing, lens flares, color grading tones, timeline patterns",
+    "boardgame": "strategic abstract artwork inspired by board games, geometric shapes, tension, layered grids"
 }
 
 def generate_image(genre: str, output_path: str):
@@ -18,18 +15,33 @@ def generate_image(genre: str, output_path: str):
 
     print(f"Generating image for genre: {genre}")
 
-    response = client.images.generate(
-        model="dall-e-3",
-        prompt=prompt,
-        size="1024x1024",
-        response_format="b64_json"
+    model = replicate.models.get("stability-ai/sdxl")
+    version = model.versions.get("5c7d5c6e0c6e4e3e8b7e8f7e8b7e8f7e")  # SDXLの安定版
+
+
+    output = replicate.run(
+      "google/imagen-4",
+      input={
+    prompt=PROMPTS,
+    "aspect_ratio": "16:9",
+    "safety_filter_level": "block_medium_and_above"
+      }
     )
 
-    image_base64 = response.data[0].b64_json
-    image_bytes = base64.b64decode(image_base64)
+    # output = version.predict(
+    #     prompt=prompt,
+    #     width=1024,
+    #     height=1024
+    # )
 
+    # output は画像URLのリスト
+    image_url = output[0]
+
+    # 画像をダウンロードして保存
+    import requests
+    img = requests.get(image_url).content
     with open(output_path, "wb") as f:
-        f.write(image_bytes)
+        f.write(img)
 
     print(f"Saved: {output_path}")
 
