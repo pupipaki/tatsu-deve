@@ -2,8 +2,8 @@ import os
 import requests
 import json
 
-# LINE_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+LINE_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+# CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 USER_ID = os.getenv("LINE_USER_ID")
 
 def send_flex():
