@@ -24,7 +24,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install openai
+          pip install replicate requests          
 
       - name: Generate images
         run: |
