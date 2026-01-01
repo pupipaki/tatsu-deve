@@ -17,8 +17,8 @@ def generate_image(genre: str, output_path: str):
 
     print(f"Generating image for genre: {genre}")
 
-    # model = replicate.models.get("stability-ai/sdxl")
-    # version = model.versions.get("5c7d5c6e0c6e4e3e8b7e8f7e8b7e8f7e")  # SDXLの安定版
+    model = replicate.models.get("stability-ai/sdxl")
+    version = model.versions.get("5c7d5c6e0c6e4e3e8b7e8f7e8b7e8f7e")  # SDXLの安定版
 
 
     output = version.predict(
