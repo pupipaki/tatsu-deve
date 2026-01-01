@@ -19,20 +19,11 @@ def generate_image(genre: str, output_path: str):
     version = model.versions.get("5c7d5c6e0c6e4e3e8b7e8f7e8b7e8f7e")  # SDXLの安定版
 
 
-    output = replicate.run(
-      "google/imagen-4",
-      input={
-          prompt==PROMPTS,
-          "aspect_ratio": "16:9",
-          "safety_filter_level": "block_medium_and_above"
-      }
+    output = version.predict(
+        prompt=prompt,
+        width=1024,
+        height=1024
     )
-
-    # output = version.predict(
-    #     prompt=prompt,
-    #     width=1024,
-    #     height=1024
-    # )
 
     # output は画像URLのリスト
     image_url = output[0]
