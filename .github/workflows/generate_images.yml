@@ -38,3 +38,8 @@ jobs:
           git add images/*.png
           git commit -m "Weekly image update" || echo "No changes to commit"
           git push
+
+      - name: Send Flex Message
+        run: |
+          pip install requests
+          python send_flex.py
