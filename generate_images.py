@@ -38,7 +38,7 @@ def generate_image(genre: str, output_path: str):
 
 
     # output は画像URLのリスト
-    image_url = output[0]
+    image_url = output
 
     # 画像をダウンロードして保存
     import requests
