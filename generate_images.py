@@ -22,9 +22,9 @@ def generate_image(genre: str, output_path: str):
     output = replicate.run(
       "google/imagen-4",
       input={
-    prompt==PROMPTS,
-    "aspect_ratio": "16:9",
-    "safety_filter_level": "block_medium_and_above"
+          prompt==PROMPTS,
+          "aspect_ratio": "16:9",
+          "safety_filter_level": "block_medium_and_above"
       }
     )
 
