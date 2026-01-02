@@ -6,6 +6,21 @@ LINE_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 # CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 USER_ID = os.getenv("LINE_USER_ID")
 
+# -----------------------------
+# ① OneNote / Web / AI から情報取得（ダミー関数）
+# -----------------------------
+def get_onenote_topic():
+    return "OneNote最新ネタ：AI作曲の新しい手法"
+
+def get_web_trend():
+    return "Web最新情報：YouTubeで癒し系動画が急上昇中"
+
+def get_ai_outline(topic):
+    return f"AIアウトライン：\n- 導入\n- {topic} の背景\n- 実践方法\n- 応用例\n- まとめ"
+
+# -----------------------------
+# ② Flex 生成
+# -----------------------------
 def send_flex():
     url = "https://api.line.me/v2/bot/message/push"
     headers = {
@@ -35,9 +50,35 @@ def send_flex():
                         "type": "box",
                         "layout": "vertical",
                         "contents": [
-                            {"type": "text", "text": "🎵 ミスチル", "weight": "bold"}
+                            {"type": "text", "text": "🎵 ミスチル", "weight": "bold"},
+                            {"type": "text", "text": onenote_topic, "wrap": True},
+                            {"type": "text", "text": web_info, "wrap": True},
+                            {"type": "text", "text": outline, "wrap": True},
+                            {
+                                "type": "button",
+                                "style": "primary",
+                                "color": "#4B9CD3",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "この記事を書く",
+                                    "uri": f"https://your-blog-editor.com/new?topic={onenote_topic}"
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": "※返信するとネタが追加されます",
+                                "size": "xs",
+                                "color": "#888888"
+                            }
                         ]
                     }
+                    # "body": {
+                    #     "type": "box",
+                    #     "layout": "vertical",
+                    #     "contents": [
+                    #         {"type": "text", "text": "🎵 ミスチル", "weight": "bold"}
+                    #     ]
+                    # }
                 },
                 {
                     "type": "bubble",
