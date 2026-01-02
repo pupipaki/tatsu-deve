@@ -18,7 +18,7 @@ def send_flex():
 
     flex = {
         "type": "flex",
-        "altText": "今週のAI画像が届きました！",
+        "altText": "ブログネタ",
         "contents": {
             "type": "carousel",
             "contents": [
@@ -35,7 +35,7 @@ def send_flex():
                         "type": "box",
                         "layout": "vertical",
                         "contents": [
-                            {"type": "text", "text": "🎵 MRジャンル", "weight": "bold"}
+                            {"type": "text", "text": "🎵 ミスチル", "weight": "bold"}
                         ]
                     }
                 },
@@ -52,7 +52,7 @@ def send_flex():
                         "type": "box",
                         "layout": "vertical",
                         "contents": [
-                            {"type": "text", "text": "🎼 作曲ジャンル", "weight": "bold"}
+                            {"type": "text", "text": "🎼 作曲ノウハウ", "weight": "bold"}
                         ]
                     }
                 },
@@ -69,7 +69,7 @@ def send_flex():
                         "type": "box",
                         "layout": "vertical",
                         "contents": [
-                            {"type": "text", "text": "🎬 動画ジャンル", "weight": "bold"}
+                            {"type": "text", "text": "🎬 動画ノウハウ", "weight": "bold"}
                         ]
                     }
                 },
@@ -86,7 +86,7 @@ def send_flex():
                         "type": "box",
                         "layout": "vertical",
                         "contents": [
-                            {"type": "text", "text": "🎲 ボードゲーム", "weight": "bold"}
+                            {"type": "text", "text": "🎲 ボドゲ情報", "weight": "bold"}
                         ]
                     }
                 }
