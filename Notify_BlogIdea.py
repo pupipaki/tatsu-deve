@@ -5,6 +5,13 @@ import json
 # -----------------------------
 # ① Graph API アクセストークン取得
 # -----------------------------
+def get_user_id(access_token):
+    url = "https://graph.microsoft.com/v1.0/users"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    res = requests.get(url, headers=headers).json()
+    # 1人だけ使うなら最初のユーザーを取得
+    return res["value"][0]["id"]
+    
 def get_access_token():
     url = f"https://login.microsoftonline.com/{os.getenv('TENANT_ID')}/oauth2/v2.0/token"
     data = {
@@ -25,11 +32,11 @@ def get_access_token():
 # -----------------------------
 # ② "WordPress"セクションID取得
 # -----------------------------
-def get_section_id(access_token, section_name="WordPress"):
-    url = "https://graph.microsoft.com/v1.0/me/onenote/sections"
+def get_section_id(access_token, user_id, section_name="WordPress"):
+    url = f"https://graph.microsoft.com/v1.0/users/{user_id}/onenote/sections"
     headers = {"Authorization": f"Bearer {access_token}"}
     res = requests.get(url, headers=headers)
-    print("セクション取得レスポンス:", res.status_code, res.text)  # ← ログ追加
+    print("セクション取得レスポンス:", res.status_code, res.text)
 
     data = res.json()
     if "value" not in data:
@@ -39,7 +46,7 @@ def get_section_id(access_token, section_name="WordPress"):
         if section["displayName"] == section_name:
             return section["id"]
     return None
-
+    
 # -----------------------------
 # ③ "article"ページ群のタイトル抽出
 # -----------------------------
@@ -115,7 +122,8 @@ def send_line_message(flex):
 # -----------------------------
 if __name__ == "__main__":
     token = get_access_token()
-    section_id = get_section_id(token)
+    user_id = get_user_id(token)
+    section_id = get_section_id(token, user_id)
     titles = get_article_titles(token, section_id)
     flex = build_flex(titles)
     send_line_message(flex)
