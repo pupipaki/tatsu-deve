@@ -64,7 +64,7 @@ def send_flex():
                             #     "action": {
                             #         "type": "uri",
                             #         "label": "この記事を書く",
-                            #         #"uri": f"https://your-blog-editor.com/new?topic={onenote_topic}"
+                            #         "uri": f"https://echo-letter.com/wp-admin/post-new.php?post_title={title}"
                             #     }
                             # },
                             # {
