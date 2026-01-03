@@ -8,9 +8,13 @@ import json
 def get_user_id(access_token):
     url = "https://graph.microsoft.com/v1.0/users"
     headers = {"Authorization": f"Bearer {access_token}"}
-    res = requests.get(url, headers=headers).json()
-    # 1人だけ使うなら最初のユーザーを取得
-    return res["value"][0]["id"]
+    res = requests.get(url, headers=headers)
+    print("ユーザー一覧レスポンス:", res.status_code, res.text)  # ← ここ追加
+
+    data = res.json()
+    if "value" not in data:
+        raise Exception("ユーザー一覧取得に失敗しました")
+    return data["value"][0]["id"]
     
 def get_access_token():
     url = f"https://login.microsoftonline.com/{os.getenv('TENANT_ID')}/oauth2/v2.0/token"
