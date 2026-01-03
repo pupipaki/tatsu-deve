@@ -28,8 +28,14 @@ def get_access_token():
 def get_section_id(access_token, section_name="WordPress"):
     url = "https://graph.microsoft.com/v1.0/me/onenote/sections"
     headers = {"Authorization": f"Bearer {access_token}"}
-    res = requests.get(url, headers=headers).json()
-    for section in res["value"]:
+    res = requests.get(url, headers=headers)
+    print("セクション取得レスポンス:", res.status_code, res.text)  # ← ログ追加
+
+    data = res.json()
+    if "value" not in data:
+        raise Exception("OneNoteセクション一覧の取得に失敗しました")
+
+    for section in data["value"]:
         if section["displayName"] == section_name:
             return section["id"]
     return None
