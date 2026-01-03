@@ -57,22 +57,22 @@ def send_flex():
                             {"type": "text", "text": "最新情報", "wrap": True},
                             #{"type": "text", "text": outline, "wrap": True},
                             {"type": "text", "text": "AIのアウトライン", "wrap": True},
-                            # {
-                            #     "type": "button",
-                            #     "style": "primary",
-                            #     "color": "#4B9CD3",
-                            #     "action": {
-                            #         "type": "uri",
-                            #         "label": "この記事を書く",
-                            #         "uri": f"https://echo-letter.com/wp-admin/post-new.php?post_title={title}"
-                            #     }
-                            # },
-                            # {
-                            #     "type": "text",
-                            #     "text": "※返信するとネタが追加されます",
-                            #     "size": "xs",
-                            #     "color": "#888888"
-                            # }
+                            {
+                                "type": "button",
+                                "style": "primary",
+                                "color": "#4B9CD3",
+                                "action": {
+                                    "type": "uri",
+                                    "label": "この記事を書く",
+                                    "uri": f"https://echo-letter.com/wp-admin/post-new.php?post_title={title}"
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": "※返信するとネタが追加されます",
+                                "size": "xs",
+                                "color": "#888888"
+                            }
                         ]
                     }
                     # "body": {
