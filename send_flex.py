@@ -62,11 +62,11 @@ def send_flex():
                                 "type": "button",
                                 "style": "primary",
                                 "color": "#4B9CD3",
-                                "action": {
-                                    "type": "uri",
-                                    "label": "この記事を書く",
-                                    #"uri": f"https://your-blog-editor.com/new?topic={onenote_topic}"
-                                }
+                                # "action": {
+                                #     "type": "uri",
+                                #     "label": "この記事を書く",
+                                #     #"uri": f"https://your-blog-editor.com/new?topic={onenote_topic}"
+                                # }
                             },
                             {
                                 "type": "text",
