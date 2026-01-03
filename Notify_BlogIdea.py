@@ -60,16 +60,16 @@ def build_flex(titles):
                 "contents": [
                     {"type": "text", "text": "📝 ブログネタ", "weight": "bold"},
                     {"type": "text", "text": title, "wrap": True},
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#4B9CD3",
-                        "action": {
-                            "type": "uri",
-                            "label": "この記事を書く",
-                            "uri": f"https://your-blog-editor.com/new?title={title}"
-                        }
-                    }
+                    # {
+                    #     "type": "button",
+                    #     "style": "primary",
+                    #     "color": "#4B9CD3",
+                    #     "action": {
+                    #         "type": "uri",
+                    #         "label": "この記事を書く",
+                    #         "uri": f"https://your-blog-editor.com/new?title={title}"
+                    #     }
+                    # }
                 ]
             }
         })
