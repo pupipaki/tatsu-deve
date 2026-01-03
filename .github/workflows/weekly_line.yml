@@ -1,9 +1,9 @@
 name: Weekly LINE Flex
 
-on:
-  schedule:
-    - cron: "0 0 * * 1"  # 毎週月曜9:00 JST
-  workflow_dispatch:
+# on:
+#   schedule:
+#     - cron: "0 0 * * 1"  # 毎週月曜9:00 JST
+#   workflow_dispatch:
 
 jobs:
   send-flex:
