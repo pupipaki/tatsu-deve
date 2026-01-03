@@ -19,7 +19,8 @@ def get_access_token():
             print("アクセストークン取得失敗:", data)
             raise Exception("アクセストークンが取得できませんでした")
         return data["access_token"]
-    
+
+    print("Graph API response:", res.status_code, res.text)  # ← ここを追加
     return res.json()["access_token"]
 
 # -----------------------------
