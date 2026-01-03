@@ -14,14 +14,13 @@ def get_access_token():
         "grant_type": "client_credentials"
     }
     res = requests.post(url, data=data)
-        data = res.json()
-        if "access_token" not in data:
-            print("アクセストークン取得失敗:", data)
-            raise Exception("アクセストークンが取得できませんでした")
-        return data["access_token"]
-
     print("Graph API response:", res.status_code, res.text)  # ← ここを追加
-    return res.json()["access_token"]
+    
+    data = res.json()
+    if "access_token" not in data:
+        print("アクセストークン取得失敗:", data)
+        raise Exception("アクセストークンが取得できませんでした")
+    return data["access_token"]
 
 # -----------------------------
 # ② "WordPress"セクションID取得
