@@ -11,6 +11,7 @@ try:
     import matplotlib
     matplotlib.use('Agg')  # ヘッドレス環境で必須
     from pytrends.request import TrendReq
+    import time
     import matplotlib.pyplot as plt
     from matplotlib import font_manager
     font_paths = [f.fname for f in font_manager.fontManager.ttflist if 'Noto' in f.name or 'IPAPGothic' in f.name or 'Meiryo' in f.name]
@@ -46,6 +47,8 @@ def get_onenote_topic():
     try:
         # pytrends 初期化（日本語ロケール、タイムゾーンは JST=540）
         pytrends = TrendReq(hl='ja-JP', tz=540)
+        pytrends = TrendReq(retries=3, backoff_factor=1, timeout=(10,25))
+        time.sleep(5)
 
         # 関連クエリを取得
         pytrends.build_payload([keyword], cat=0, timeframe='today 1-m', geo='JP', gprop='youtube')
