@@ -1,10 +1,6 @@
 import os
 import requests
 import json
-# from dotenv import load_dotenv
-
-# .env 読み込み
-# load_dotenv()
 
 # 必要な環境変数（ローカル or GitHub Actions Secrets）
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -20,9 +16,9 @@ TARGET_SECTION_NAME = os.getenv("TARGET_SECTION_NAME", "article")
 
 
 def refresh_access_token():
-    """
-    refresh_token から access_token を更新
-    """
+    if not REFRESH_TOKEN or not CLIENT_ID or not CLIENT_SECRET:
+        raise Exception("環境変数が未設定です: CLIENT_ID/CLIENT_SECRET/REFRESH_TOKEN を確認してください")
+
     url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
     data = {
         "client_id": CLIENT_ID,
@@ -32,49 +28,42 @@ def refresh_access_token():
         "grant_type": "refresh_token",
     }
     res = requests.post(url, data=data)
-    token_data = res.json()
-    print("Refresh response:", res.status_code, token_data)
+    try:
+        token_data = res.json()
+    except ValueError:
+        raise Exception(f"トークン取得でJSON解析失敗: status={res.status_code} body={res.text}")
 
-    if "access_token" not in token_data:
-        raise Exception("アクセストークンの更新に失敗しました")
+    print("Refresh response:", res.status_code, token_data)
+    if res.status_code != 200 or "access_token" not in token_data:
+        raise Exception(f"アクセストークンの更新に失敗しました: {token_data}")
 
     return token_data["access_token"]
 
 
 def get_section_id(access_token, section_name=TARGET_SECTION_NAME):
-    """
-    /me/onenote/sections から指定セクション名のIDを取得
-    """
     url = "https://graph.microsoft.com/v1.0/me/onenote/sections"
     headers = {"Authorization": f"Bearer {access_token}"}
     res = requests.get(url, headers=headers)
-    print("セクション取得レスポンス:", res.status_code, res.text)
-
+    if res.status_code != 200:
+        raise Exception(f"セクション一覧取得失敗: status={res.status_code} body={res.text}")
     data = res.json()
-    if "value" not in data:
-        raise Exception("OneNoteセクション一覧の取得に失敗しました")
-
-    for section in data["value"]:
+    for section in data.get("value", []):
         if section.get("displayName") == section_name:
             return section.get("id")
-
     raise Exception(f"指定セクションが見つかりません: {section_name}")
 
-
 def get_page_titles(access_token, section_id):
-    """
-    セクションID配下のページ一覧からタイトルだけを抽出
-    """
     url = f"https://graph.microsoft.com/v1.0/me/onenote/sections/{section_id}/pages"
     headers = {"Authorization": f"Bearer {access_token}"}
-    res = requests.get(url, headers=headers)
-    print("ページ一覧取得レスポンス:", res.status_code, res.text)
-
-    data = res.json()
-    if "value" not in data:
-        raise Exception("ページ一覧の取得に失敗しました")
-
-    titles = [page.get("title", "(no title)") for page in data["value"]]
+    titles = []
+    while url:
+        res = requests.get(url, headers=headers)
+        if res.status_code != 200:
+            raise Exception(f"ページ一覧取得失敗: status={res.status_code} body={res.text}")
+        data = res.json()
+        for page in data.get("value", []):
+            titles.append(page.get("title", "(no title)"))
+        url = data.get("@odata.nextLink")  # 次ページがあればループ
     return titles
 
 
@@ -108,9 +97,6 @@ def build_flex_message(titles):
 
 
 def send_line_flex(flex_content):
-    """
-    LINEにFlexメッセージをPush送信
-    """
     url = "https://api.line.me/v2/bot/message/push"
     headers = {
         "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
@@ -128,9 +114,9 @@ def send_line_flex(flex_content):
     }
     res = requests.post(url, headers=headers, json=payload)
     print("LINE通知レスポンス:", res.status_code, res.text)
-
     if res.status_code != 200:
-        raise Exception("LINE通知に失敗しました")
+        # 403/401 は認証、429 はレート制限、500系はサーバーエラー
+        raise Exception(f"LINE通知に失敗しました: status={res.status_code} body={res.text}")
 
 
 def main():
@@ -142,7 +128,7 @@ def main():
     print("ターゲットセクションID:", section_id)
 
     # 3. ページタイトル一覧取得
-    titles = get_page_titles(access_token, "article")
+    titles = get_page_titles(access_token, section_id)
     print("取得タイトル数:", len(titles))
 
     # 4. Flex生成
