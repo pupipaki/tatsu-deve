@@ -46,7 +46,7 @@ def get_onenote_topic():
 
     try:
         # pytrends 初期化（日本語ロケール、タイムゾーンは JST=540）
-        pytrends = TrendReq(hl='ja-JP', tz=540)
+        # pytrends = TrendReq(hl='ja-JP', tz=540)
         pytrends = TrendReq(retries=3, backoff_factor=1, timeout=(10,25))
         time.sleep(10)
 
