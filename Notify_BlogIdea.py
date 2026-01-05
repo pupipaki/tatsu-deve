@@ -1,5 +1,6 @@
 import os
 import requests
+import json
 # from dotenv import load_dotenv
 
 # .env 読み込み
