@@ -36,7 +36,7 @@ def get_onenote_topic():
     返り値: str (上位10キーワードの整形テキスト)
     """
     keyword = "ミスチル"
-    max_items = 10
+    max_items = 5
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     image_filename = f"trends_mr_{timestamp}.png"
 
@@ -48,7 +48,7 @@ def get_onenote_topic():
         pytrends = TrendReq(hl='ja-JP', tz=540)
 
         # 関連クエリを取得
-        pytrends.build_payload([keyword], cat=0, timeframe='today 12-m', geo='JP', gprop='')
+        pytrends.build_payload([keyword], cat=0, timeframe='today 1-m', geo='JP', gprop='youtube')
         related = pytrends.related_queries()
 
         # related は dict 形式: { 'ミスチル': {'top': DataFrame, 'rising': DataFrame} }
