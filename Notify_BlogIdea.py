@@ -14,6 +14,9 @@ LINE_USER_ID = os.getenv("LINE_USER_ID")
 # OneNoteでタイトルを取りたいセクション名
 TARGET_SECTION_NAME = os.getenv("TARGET_SECTION_NAME", "article")
 
+# WordPressのURL
+WORDPRESS_NEW_POST_URL_BASE = os.getenv("WORDPRESS_NEW_POST_URL_BASE", "https://example.com/wp-admin/post-new.php")
+
 
 def refresh_access_token():
     if not REFRESH_TOKEN or not CLIENT_ID or not CLIENT_SECRET:
@@ -70,10 +73,7 @@ def get_page_titles(access_token, section_id):
 #ボタンつきカルーセル
 from urllib.parse import quote_plus
 
-# 環境変数
-WORDPRESS_NEW_POST_URL_BASE = os.getenv("WORDPRESS_NEW_POST_URL_BASE", "https://example.com/wp-admin/post-new.php")
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_USER_ID = os.getenv("LINE_USER_ID")
+
 
 # タイトルを短く整形するヘルパー
 def normalize_title(title, max_len=60):
