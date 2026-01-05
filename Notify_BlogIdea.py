@@ -16,7 +16,7 @@ LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_USER_ID = os.getenv("LINE_USER_ID")
 
 # OneNoteでタイトルを取りたいセクション名
-TARGET_SECTION_NAME = os.getenv("TARGET_SECTION_NAME", "WordPress")
+TARGET_SECTION_NAME = os.getenv("TARGET_SECTION_NAME", "article")
 
 
 def refresh_access_token():
