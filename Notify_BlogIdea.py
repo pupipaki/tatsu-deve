@@ -142,7 +142,7 @@ def main():
     print("ターゲットセクションID:", section_id)
 
     # 3. ページタイトル一覧取得
-    titles = get_page_titles(access_token, section_id)
+    titles = get_page_titles(access_token, "article")
     print("取得タイトル数:", len(titles))
 
     # 4. Flex生成
