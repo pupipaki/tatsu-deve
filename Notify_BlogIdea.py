@@ -1,9 +1,9 @@
 import os
 import requests
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 # .env 読み込み
-load_dotenv()
+# load_dotenv()
 
 # 必要な環境変数（ローカル or GitHub Actions Secrets）
 CLIENT_ID = os.getenv("CLIENT_ID")
