@@ -67,33 +67,118 @@ def get_page_titles(access_token, section_id):
     return titles
 
 
-def build_flex_message(titles):
-    """
-    ページタイトルだけを縦に並べたシンプルなFlex Bubbleを生成
-    """
+#ボタンつきカルーセル
+from urllib.parse import quote_plus
+
+# 環境変数
+WORDPRESS_NEW_POST_URL_BASE = os.getenv("WORDPRESS_NEW_POST_URL_BASE", "https://example.com/wp-admin/post-new.php")
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
+LINE_USER_ID = os.getenv("LINE_USER_ID")
+
+# タイトルを短く整形するヘルパー
+def normalize_title(title, max_len=60):
+    t = title.strip()
+    if len(t) > max_len:
+        return t[:max_len-1] + "…"
+    return t
+
+# 各タイトルごとにバブルを作る（上限を設定）
+def build_flex_carousel_with_buttons(titles, limit=10):
     if not titles:
         titles = ["（今週のネタはありません）"]
 
-    contents = []
-    for title in titles:
-        contents.append({
-            "type": "text",
-            "text": title,
-            "weight": "bold",
-            "size": "sm",
-            "wrap": True,
-            "margin": "md",
-        })
+    bubbles = []
+    for title in titles[:limit]:
+        safe_title = normalize_title(title)
+        # WordPress の新規投稿URLにタイトルを渡す（post_title パラメータは環境に合わせて変更）
+        # 例: https://example.com/wp-admin/post-new.php?post_title=タイトル
+        wp_url = f"{WORDPRESS_NEW_POST_URL_BASE}?post_title={quote_plus(safe_title)}"
 
-    bubble = {
-        "type": "bubble",
-        "body": {
-            "type": "box",
-            "layout": "vertical",
-            "contents": contents,
+        bubble = {
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": safe_title,
+                        "weight": "bold",
+                        "size": "md",
+                        "wrap": True
+                    },
+                    {
+                        "type": "box",
+                        "layout": "baseline",
+                        "margin": "md",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": " ",
+                                "size": "sm",
+                                "color": "#AAAAAA",
+                                "flex": 1
+                            }
+                        ]
+                    }
+                ]
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "この記事を書く",
+                            "uri": wp_url
+                        }
+                    }
+                ]
+            }
         }
+        bubbles.append(bubble)
+
+    # カルーセルで返す
+    carousel = {
+        "type": "carousel",
+        "contents": bubbles
     }
-    return bubble
+    return carousel
+
+
+
+# def build_flex_message(titles):
+#     """
+#     ページタイトルだけを縦に並べたシンプルなFlex Bubbleを生成
+#     """
+#     if not titles:
+#         titles = ["（今週のネタはありません）"]
+
+#     contents = []
+#     for title in titles:
+#         contents.append({
+#             "type": "text",
+#             "text": title,
+#             "weight": "bold",
+#             "size": "sm",
+#             "wrap": True,
+#             "margin": "md",
+#         })
+
+#     bubble = {
+#         "type": "bubble",
+#         "body": {
+#             "type": "box",
+#             "layout": "vertical",
+#             "contents": contents,
+#         }
+#     }
+#     return bubble
 
 
 def send_line_flex(flex_content):
@@ -132,7 +217,9 @@ def main():
     print("取得タイトル数:", len(titles))
 
     # 4. Flex生成
-    flex = build_flex_message(titles)
+    # flex = build_flex_message(titles)
+    flex = build_flex_carousel_with_buttons(titles, limit=8)
+
 
     # 5. LINE通知
     send_line_flex(flex)
