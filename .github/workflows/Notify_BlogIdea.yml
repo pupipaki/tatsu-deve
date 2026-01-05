@@ -2,7 +2,7 @@ name: Notify Blog Ideas
 
 on:
   schedule:
-    - cron: '0 20 * * *'  # 毎週火曜9時
+    - cron: '0 20 * * *'  # 毎日20時
   workflow_dispatch:
 
 jobs:
