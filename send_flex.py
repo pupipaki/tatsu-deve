@@ -8,9 +8,15 @@ from datetime import datetime
 # 必要なパッケージ: pytrends, matplotlib
 # インストール例: pip install pytrends matplotlib
 try:
+    import matplotlib
+    matplotlib.use('Agg')  # ヘッドレス環境で必須
     from pytrends.request import TrendReq
     import matplotlib.pyplot as plt
     from matplotlib import font_manager
+    font_paths = [f.fname for f in font_manager.fontManager.ttflist if 'Noto' in f.name or 'IPAPGothic' in f.name or 'Meiryo' in f.name]
+    if font_paths:
+        plt.rcParams['font.family'] = font_manager.FontProperties(fname=font_paths[0]).get_name()
+
 except Exception:
     TrendReq = None
     plt = None
