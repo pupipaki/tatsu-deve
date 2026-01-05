@@ -149,10 +149,10 @@ def send_flex():
                         "contents": [
                             {"type": "text", "text": "🎵 ミスチル", "weight": "bold"},
                             # 必要なら onenote_topic_text をここに入れて表示できます（長文は wrap=True に）
-                            # {"type": "text", "text": onenote_topic_text, "wrap": True},
-                            {"type": "text", "text": "ミスチルブログ", "wrap": True},
-                            {"type": "text", "text": "最新情報", "wrap": True},
-                            {"type": "text", "text": "AIのアウトライン", "wrap": True},
+                            {"type": "text", "text": onenote_topic_text, "wrap": True},
+                            # {"type": "text", "text": "ミスチルブログ", "wrap": True},
+                            # {"type": "text", "text": "最新情報", "wrap": True},
+                            # {"type": "text", "text": "AIのアウトライン", "wrap": True},
                             {
                                 "type": "button",
                                 "style": "primary",
