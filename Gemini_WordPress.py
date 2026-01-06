@@ -88,7 +88,6 @@ def generate_blog_with_gemini(note_title, note_content):
     return response.text
 
 # --- 3. WordPress API 関連 ---
-
 def post_to_wordpress(title, content):
     url = f"{WP_SITE_URL}/wp-json/wp/v2/posts"
     auth = HTTPBasicAuth(WP_USERNAME, WP_APP_PASSWORD)
@@ -96,15 +95,36 @@ def post_to_wordpress(title, content):
     payload = {
         "title": title,
         "content": content,
-        "status": "draft"  # 下書きとして保存
+        "status": "draft"
     }
     
-    res = requests.post(url, json=payload, auth=auth)
-    if res.status_code == 201:
-        return res.json().get("link") # 作成された記事のリンク
-    else:
-        print(f"WP投稿失敗: {res.text}")
+    try:
+        res = requests.post(url, json=payload, auth=auth)
+        # 成功以外（401, 403, 404など）なら例外を発生させる
+        res.raise_for_status() 
+        return res.json().get("link")
+    except requests.exceptions.RequestException as e:
+        print(f"WP投稿エラー詳細: {e}")
+        if res is not None:
+             print(f"サーバーからのレスポンス: {res.text[:200]}") # 冒頭200文字を表示
         return None
+        
+# def post_to_wordpress(title, content):
+#     url = f"{WP_SITE_URL}/wp-json/wp/v2/posts"
+#     auth = HTTPBasicAuth(WP_USERNAME, WP_APP_PASSWORD)
+    
+#     payload = {
+#         "title": title,
+#         "content": content,
+#         "status": "draft"  # 下書きとして保存
+#     }
+    
+#     res = requests.post(url, json=payload, auth=auth)
+#     if res.status_code == 201:
+#         return res.json().get("link") # 作成された記事のリンク
+#     else:
+#         print(f"WP投稿失敗: {res.text}")
+#         return None
 
 # --- 4. LINE 通知 関連 ---
 
