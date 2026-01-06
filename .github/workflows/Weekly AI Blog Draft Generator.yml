@@ -45,4 +45,4 @@ jobs:
           
           # その他設定
           TARGET_SECTION_NAME: "write" # セクション名を指定
-        run: Gemini_WordPress.py # あなたのPythonファイル名に合わせて変更してください
+        run: python Gemini_WordPress.py # あなたのPythonファイル名に合わせて変更してください
