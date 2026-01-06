@@ -69,7 +69,7 @@ def get_page_content(access_token, page_id):
 
 def generate_blog_with_gemini(note_title, note_content):
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
     
     prompt = f"""
     以下のメモ（タイトルと内容）を元に、ブログ記事の下書きを作成してください。
