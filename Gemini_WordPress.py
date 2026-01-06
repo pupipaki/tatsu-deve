@@ -120,11 +120,84 @@ def send_line_notification(message):
     }
     requests.post(url, headers=headers, json=payload)
 
+# --- OneNote ページ移動用の関数 ---
+
+def move_page_to_fin_section(access_token, page_id):
+    """ページを 'fin' セクションにコピーし、元のページを削除する"""
+    
+    # 1. "fin" セクションの ID を取得
+    fin_section_id = get_section_id(access_token, "fin")
+    
+    # 2. 指定したセクションへページをコピー
+    # POST /me/onenote/pages/{id}/copyToSection
+    copy_url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}/copyToSection"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    copy_payload = {"id": fin_section_id}
+    
+    copy_res = requests.post(copy_url, headers=headers, json=copy_payload)
+    
+    if copy_res.status_code in [200, 202]:
+        print(f"ページを 'fin' セクションへコピーしました。")
+        
+        # 3. コピーに成功したら、元の（'write'セクション内の）ページを削除
+        delete_url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}"
+        delete_res = requests.delete(delete_url, headers=headers)
+        
+        if delete_res.status_code == 204:
+            print("元のページを削除しました。移動完了。")
+        else:
+            print(f"警告: 元ページの削除に失敗しました: {delete_res.text}")
+    else:
+        print(f"移動失敗 (コピーエラー): {copy_res.text}")
+
+
 # --- メイン処理 ---
+
+# def main():
+#     try:
+#         # 1. OneNoteからネタを取得
+#         access_token = refresh_access_token()
+#         section_id = get_section_id(access_token, TARGET_SECTION_NAME)
+#         pages = get_pages_in_section(access_token, section_id)
+        
+#         if not pages:
+#             print("処理対象のページがありませんでした。")
+#             return
+
+#         for page in pages:
+#             page_id = page['id']
+#             original_title = page['title']
+#             print(f"処理開始: {original_title}")
+            
+#             # 本文取得
+#             note_content = get_page_content(access_token, page_id)
+            
+#             # 2. Geminiで下書き生成
+#             print("Geminiが執筆中...")
+#             generated_text = generate_blog_with_gemini(original_title, note_content)
+            
+#             # 3. WordPressに投稿
+#             print("WordPressに下書き保存中...")
+#             wp_link = post_to_wordpress(original_title, generated_text)
+            
+#             # 4. LINE通知
+#             if wp_link:
+#                 msg = f"✅ ブログの下書き作成完了！\n元ネタ: {original_title}\nURL: {wp_link}"
+#                 send_line_notification(msg)
+#                 print(f"完了通知送信済: {original_title}")
+            
+#     except Exception as e:
+#         error_msg = f"❌ システムエラーが発生しました:\n{str(e)}"
+#         send_line_notification(error_msg)
+#         print(error_msg)
+
+# --- メイン処理 (修正版) ---
 
 def main():
     try:
-        # 1. OneNoteからネタを取得
         access_token = refresh_access_token()
         section_id = get_section_id(access_token, TARGET_SECTION_NAME)
         pages = get_pages_in_section(access_token, section_id)
@@ -136,29 +209,32 @@ def main():
         for page in pages:
             page_id = page['id']
             original_title = page['title']
-            print(f"処理開始: {original_title}")
+            print(f"--- 処理開始: {original_title} ---")
             
             # 本文取得
             note_content = get_page_content(access_token, page_id)
             
-            # 2. Geminiで下書き生成
-            print("Geminiが執筆中...")
+            # Geminiで下書き生成
             generated_text = generate_blog_with_gemini(original_title, note_content)
             
-            # 3. WordPressに投稿
-            print("WordPressに下書き保存中...")
+            # WordPressに投稿
             wp_link = post_to_wordpress(original_title, generated_text)
             
-            # 4. LINE通知
+            # 投稿に成功したら移動処理を行う
             if wp_link:
-                msg = f"✅ ブログの下書き作成完了！\n元ネタ: {original_title}\nURL: {wp_link}"
+                # LINE通知
+                msg = f"✅ ブログ下書き完了！\n元ネタ: {original_title}\nURL: {wp_link}"
                 send_line_notification(msg)
-                print(f"完了通知送信済: {original_title}")
+                
+                # --- 追加：処理済みページを "fin" セクションへ移動 ---
+                move_page_to_fin_section(access_token, page_id)
+                print(f"ページ '{original_title}' を fin セクションへ移動しました。")
             
     except Exception as e:
-        error_msg = f"❌ システムエラーが発生しました:\n{str(e)}"
+        error_msg = f"❌ システムエラー:\n{str(e)}"
         send_line_notification(error_msg)
         print(error_msg)
+
 
 if __name__ == "__main__":
     main()
