@@ -78,25 +78,44 @@ def generate_blog_with_gemini(note_title, note_content):
     【元のメモ内容】: {note_content}
     
     【出力ルール】:
-    1. 読者が読みたくなる魅力的な記事タイトルを考えてください。
+    1.読者が検索しそうな「メインキーワード」と「関連キーワード」を5つ抽出してください。
     2. 記事の構成（目次案）を最初に示してください。
-    3. 本文は、読者に寄り添った丁寧な口調で、詳しく書いてください。
-    4. HTML形式（h2, h3, pタグなど）で出力してください。
+    3.記事タイトルにはメインキーワードを必ず含めてください。
+    4. 本文は、読者に寄り添った丁寧な口調で、詳しく書いてください。
+    5. HTML形式（h2, h3, pタグなど）で出力してください。
+    6.**重要**: 出力の最後に、以下の形式でメタデータを付与してください。
+       [KEYWORDS]: キーワード1, キーワード2, キーワード3...
+       [DESCRIPTION]: 記事の要約（120文字以内）
     """
     
     response = model.generate_content(prompt)
     return response.text
 
 # --- 3. WordPress API 関連 ---
-def post_to_wordpress(title, content):
+def post_to_wordpress(title, content, keywords=None):
     url = f"{WP_SITE_URL}/wp-json/wp/v2/posts"
     auth = HTTPBasicAuth(WP_USERNAME, WP_APP_PASSWORD)
     
     payload = {
         "title": title,
         "content": content,
-        "status": "draft"
+        "status": "draft",
+        "tags": keywords  # キーワードをタグとして登録
     }
+    
+    # 実際には、キーワード文字列をタグIDに変換するか、
+    # 文字列のまま扱えるプラグインの設定が必要です。
+    # 標準APIではタグID（数値）の配列を受け取ります。
+
+# def post_to_wordpress(title, content):
+#     url = f"{WP_SITE_URL}/wp-json/wp/v2/posts"
+#     auth = HTTPBasicAuth(WP_USERNAME, WP_APP_PASSWORD)
+    
+#     payload = {
+#         "title": title,
+#         "content": content,
+#         "status": "draft"
+#     }
     
     try:
         res = requests.post(url, json=payload, auth=auth)
@@ -109,22 +128,6 @@ def post_to_wordpress(title, content):
              print(f"サーバーからのレスポンス: {res.text[:200]}") # 冒頭200文字を表示
         return None
         
-# def post_to_wordpress(title, content):
-#     url = f"{WP_SITE_URL}/wp-json/wp/v2/posts"
-#     auth = HTTPBasicAuth(WP_USERNAME, WP_APP_PASSWORD)
-    
-#     payload = {
-#         "title": title,
-#         "content": content,
-#         "status": "draft"  # 下書きとして保存
-#     }
-    
-#     res = requests.post(url, json=payload, auth=auth)
-#     if res.status_code == 201:
-#         return res.json().get("link") # 作成された記事のリンク
-#     else:
-#         print(f"WP投稿失敗: {res.text}")
-#         return None
 
 # --- 4. LINE 通知 関連 ---
 
