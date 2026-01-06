@@ -150,37 +150,6 @@ def build_flex_carousel_with_buttons(titles, limit=10):
     }
     return carousel
 
-
-
-# def build_flex_message(titles):
-#     """
-#     ページタイトルだけを縦に並べたシンプルなFlex Bubbleを生成
-#     """
-#     if not titles:
-#         titles = ["（今週のネタはありません）"]
-
-#     contents = []
-#     for title in titles:
-#         contents.append({
-#             "type": "text",
-#             "text": title,
-#             "weight": "bold",
-#             "size": "sm",
-#             "wrap": True,
-#             "margin": "md",
-#         })
-
-#     bubble = {
-#         "type": "bubble",
-#         "body": {
-#             "type": "box",
-#             "layout": "vertical",
-#             "contents": contents,
-#         }
-#     }
-#     return bubble
-
-
 def send_line_flex(flex_content):
     url = "https://api.line.me/v2/bot/message/push"
     headers = {
