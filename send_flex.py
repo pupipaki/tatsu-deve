@@ -62,7 +62,7 @@ def create_onenote_page(access_token, section_id, title, content):
         <title>{title}</title>
       </head>
       <body>
-        {content.replace('\n', '<br>')}
+        {content_html}
       </body>
     </html>
     """
