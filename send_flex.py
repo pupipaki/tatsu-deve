@@ -122,6 +122,9 @@ def send_combined_process():
                     "aspectRatio": "1:1",
                     "aspectMode": "cover"
                 },
+
+                text_preview = outline.strip()[:100] + "..." if outline.strip() else "AI生成に失敗しました"
+
                 "body": {
                     "type": "box",
                     "layout": "vertical",
