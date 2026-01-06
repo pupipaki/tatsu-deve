@@ -18,7 +18,7 @@ WORDPRESS_NEW_POST_URL_BASE = os.getenv("WORDPRESS_NEW_POST_URL_BASE", "https://
 
 # Geminiの設定
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel(''gemini-2.5-flash'')
+model = genai.GenerativeModel(model_name="gemini-2.5-flash")
 
 def refresh_access_token():
     if not REFRESH_TOKEN or not CLIENT_ID or not CLIENT_SECRET:
