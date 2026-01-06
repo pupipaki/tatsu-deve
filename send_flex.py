@@ -16,7 +16,7 @@ TARGET_SECTION_NAME = os.getenv("TARGET_SECTION_NAME", "article")
 
 # Geminiの設定
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+model = genai.GenerativeModel(model_name="gemini-2.5-flash")
 
 # -----------------------------
 # ① OneNote 認証・操作関連
