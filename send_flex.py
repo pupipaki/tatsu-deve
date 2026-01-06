@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from urllib.parse import quote_plus
 import google.generativeai as genai
+import html
 
 # --- 環境変数（OneNote / LINE / Gemini） ---
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -45,6 +46,8 @@ def get_section_id(access_token, section_name):
             return section.get("id")
     raise Exception(f"セクションが見つかりません: {section_name}")
 
+
+
 def create_onenote_page(access_token, section_id, title, content):
     """OneNoteの指定セクションに新しいページを作成する"""
     url = f"https://graph.microsoft.com/v1.0/me/onenote/sections/{section_id}/pages"
@@ -52,20 +55,23 @@ def create_onenote_page(access_token, section_id, title, content):
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "text/html"
     }
-    
-    # HTML形式でコンテンツを作成
-    content_html = content.replace('\n', '<br>')
-    html_body = f"""
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>{title}</title>
-      </head>
-      <body>
-        {content_html}
-      </body>
-    </html>
-    """
+
+    # Geminiのアウトラインを安全なHTMLに変換
+    safe_content = html.escape(content).replace('\n', '<br>')
+
+    # OneNoteが受け入れやすい最小構造
+    html_body = f"""<!DOCTYPE html>
+<html>
+<head><title>{title}</title></head>
+<body>
+<p>{safe_content}</p>
+</body>
+</html>"""
+
+    print("=== OneNote HTML ===")
+    print(html_body)
+    print("====================")
+
     res = requests.post(url, headers=headers, data=html_body.encode('utf-8'))
     if res.status_code == 201:
         return res.json().get("links", {}).get("oneNoteWebUrl", {}).get("href", "#")
