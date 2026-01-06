@@ -54,6 +54,7 @@ def create_onenote_page(access_token, section_id, title, content):
     }
     
     # HTML形式でコンテンツを作成
+    content_html = content.replace('\n', '<br>')
     html_body = f"""
     <!DOCTYPE html>
     <html>
