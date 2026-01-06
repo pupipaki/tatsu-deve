@@ -119,6 +119,10 @@ def send_combined_process():
             onenote_url = create_onenote_page(access_token, section_id, page_title, outline)
 
             # 3. カルーセルのバブルを作成
+            if outline.startswith("AI生成エラー") or not outline.strip():
+                text_preview = "AI生成に失敗しました"
+            else:
+                text_preview = outline.strip()[:100] + "..."
             bubble = {
                 "type": "bubble",
                 "hero": {
@@ -128,9 +132,6 @@ def send_combined_process():
                     "aspectRatio": "1:1",
                     "aspectMode": "cover"
                 },
-
-                text_preview = outline.strip()[:100] + "..." if outline.strip() else "AI生成に失敗しました"
-
                 "body": {
                     "type": "box",
                     "layout": "vertical",
