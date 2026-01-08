@@ -4,45 +4,64 @@ on:
   schedule:
     # 毎週金曜日 17:00 JST (08:00 UTC)
     - cron: '0 8 * * 5'
-  workflow_dispatch: # 手動実行もできるように設定
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on:
+      - self-hosted
+      - raspi
+    timeout-minutes: 60
+    env:
+      # Microsoft Graph API (OneNote)
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+
+      # Gemini API
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      # WordPress API
+      WP_USERNAME: ${{ secrets.WP_USERNAME }}
+      WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+      WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
+
+      # LINE Notify / Messaging API
+      LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+      LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+
+      # その他設定
+      TARGET_SECTION_NAME: "write"
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
+      - name: Check python3 availability
         run: |
+          echo "Python version:"
+          python3 --version
+          which python3
+
+      - name: Create venv and install dependencies
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
           python -m pip install --upgrade pip
           pip install -U google-generativeai requests
 
       - name: Run AI Blogger Script
         env:
-          # Microsoft Graph API (OneNote)
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-          
-          # Gemini API
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          
-          # WordPress API
           WP_USERNAME: ${{ secrets.WP_USERNAME }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           WP_SITE_URL: ${{ secrets.WP_SITE_URL }}
-          
-          # LINE Notify / Messaging API
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-          
-          # その他設定
-          TARGET_SECTION_NAME: "write" # セクション名を指定
-        run: python Gemini_WordPress.py # あなたのPythonファイル名に合わせて変更してください
+          TARGET_SECTION_NAME: "write"
+        run: |
+          . .venv/bin/activate
+          python Gemini_WordPress.py
