@@ -1,0 +1,115 @@
+name: Weekly LINE article Flex
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"  # 毎週月曜9:00 JST
+  workflow_dispatch:
+
+# jobs:
+#   run-trends:
+#     runs-on: ubuntu-latest
+#     env:
+#       LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+#       LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.11'
+
+#       - name: Cache pip
+#         uses: actions/cache@v4
+#         with:
+#           path: ~/.cache/pip
+#           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+#           restore-keys: |
+#             ${{ runner.os }}-pip-
+
+#       - name: Install system packages and fonts
+#         run: |
+#           sudo apt-get update
+#           sudo apt-get install -y fonts-noto-cjk
+#           # 必要に応じて他のフォントを追加
+#           python -m pip install --upgrade pip
+
+#       - name: Install Python dependencies
+#         run: |
+#           # 依存を requirements.txt で管理している場合
+#           if [ -f requirements.txt ]; then
+#             pip install -r requirements.txt
+#           else
+#             pip install pytrends matplotlib pandas requests
+#           fi
+
+#       - name: Run trends script
+#         env:
+#           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+#           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+#         run: |
+#           # 実行するスクリプト名に合わせて変更してください
+#           python send_flex.py
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    env:
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
+      LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+      LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+      TARGET_SECTION_NAME: ${{ secrets.TARGET_SECTION_NAME }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U google-generativeai requests
+      - name: Run notifier
+        env:
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # これも忘れずに追加してください
+          TARGET_SECTION_NAME: "article"
+          WORDPRESS_NEW_POST_URL_BASE: "https://example.com/wp-admin/post-new.php"
+        run: python send_flex.py
+
+
+
+# jobs:
+#   send-flex:
+#     runs-on: ubuntu-latest
+
+#     env:
+#       LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+#       LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: "3.11"
+
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install requests
+
+#       - name: Run script
+#         run: |
+#           python send_flex.py
