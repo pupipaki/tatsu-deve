@@ -1,0 +1,12 @@
+name: Test Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: 
+    - self-hosted
+    - raspi
+    steps:
+      - run: echo "Hello from Raspberry Pi!"
