@@ -18,7 +18,7 @@ jobs:
       REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
       LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
       LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
-      TARGET_SECTION_NAME: ${{ secrets.TARGET_SECTION_NAME }}
+      TARGET_SECTION_KEYWORD: ${{ secrets.TARGET_SECTION_KEYWORD }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
       - name: Checkout repository
