@@ -176,7 +176,7 @@ def build_flex_carousel(access_token, pages):
                         "action": {
                             "type": "uri", 
                             "label": "OneNoteアプリを起動", 
-                            "uri": "https://go.microsoft.com/fwlink/?linkid=2023714" 
+                            "uri": "intent://onenote/#Intent;scheme=onenote;package=com.microsoft.office.onenote;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.microsoft.office.onenote;end" 
                         }
                     }
                 ]
