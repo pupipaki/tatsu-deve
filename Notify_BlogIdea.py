@@ -167,7 +167,7 @@ def build_flex_carousel(access_token, pages):
                         "type": "button",
                         "style": "secondary",
                         "height": "sm",
-                        "action": {"type": "uri", "label": "ブラウザ", "uri": "https://www.onenote.com/notebooks"}
+                        "action": {"type": "uri", "label": "ブラウザ", "uri": "https://go.microsoft.com/fwlink/?linkid=2023714"}
                     },
                     {
                         "type": "button",
@@ -176,7 +176,7 @@ def build_flex_carousel(access_token, pages):
                         "action": {
                             "type": "uri", 
                             "label": "OneNoteアプリを起動", 
-                            "uri": f"{onenote_web_url}&open=external" 
+                            "uri": "https://onenoteresume.page.link/open" 
                         }
                     }
                 ]
