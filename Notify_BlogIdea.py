@@ -13,7 +13,7 @@ REFRESH_TOKEN = os.getenv("REFRESH_TOKEN")
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 LINE_USER_ID = os.getenv("LINE_USER_ID")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-TARGET_SECTION_NAME = os.getenv("TARGET_SECTION_NAME", "article")
+TARGET_SECTION_KEYWORD = os.getenv("TARGET_SECTION_KEYWORD", "keyword")
 WORDPRESS_NEW_POST_URL_BASE = os.getenv("WORDPRESS_NEW_POST_URL_BASE", "https://example.com/wp-admin/post-new.php")
 
 genai.configure(api_key=GEMINI_API_KEY)
