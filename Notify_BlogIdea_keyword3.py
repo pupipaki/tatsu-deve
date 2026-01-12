@@ -59,9 +59,16 @@ def get_random_pages(access_token, section_id, count=5):
     return random.sample(pages, min(len(pages), count))
 
 def get_keywords_from_gemini(title):
-    """Gemini APIを使用してキーワードを3つ抽出"""
+    """Gemini APIを使用"""
     try:
-        prompt = f"「{title}」というブログ記事のタイトルに対して、検索されそうなキーワードを3つ、カンマ区切りで出力してください。余計な説明は不要です。"
+        prompt = f"「{title}」というタイトルを検索する人が、今もっとも知りたい「最新の解決策」に焦点を当てたアウトラインを作成してください。
+                    構成ルール：
+                    -読者が直面している「最新の課題」を具体化する。
+                    -解決までのステップをH2見出しで3段階（Step 1~3）で構成する。
+                    -各見出しに、盛り込むべきキーワードや最新情報のメモを添える。
+                    -最後に「よくある質問」の項目を追加する。
+                    -※余計な説明は不要です。"
+        #prompt = f"「{title}」というブログ記事のタイトルに対して、検索されそうなキーワードを3つ、カンマ区切りで出力してください。余計な説明は不要です。"
         response = model.generate_content(prompt)
         return response.text.replace(" ", "").replace("\n", "").split(",")
     except Exception as e:
@@ -69,7 +76,7 @@ def get_keywords_from_gemini(title):
         return ["キーワード取得失敗"]
 
 def update_onenote_page_with_keywords(access_token, page_id, keywords):
-    """OneNoteのページ末尾にキーワードを書き込む"""
+    """OneNoteのページ末尾に書き込む"""
     url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}/content"
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -91,7 +98,7 @@ def update_onenote_page_with_keywords(access_token, page_id, keywords):
     if res.status_code != 204:
         print(f"OneNote更新失敗 (PageID: {page_id}): {res.status_code} {res.text}")
     else:
-        print(f"OneNoteにキーワードを書き込みました: {keyword_text}")
+        print(f"OneNoteに書き込みました: {keyword_text}")
 
 def normalize_title(title, max_len=40):
     t = title.strip()
