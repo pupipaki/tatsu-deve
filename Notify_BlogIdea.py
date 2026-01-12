@@ -19,8 +19,47 @@ WORDPRESS_NEW_POST_URL_BASE = os.getenv("WORDPRESS_NEW_POST_URL_BASE", "https://
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel(model_name="gemini-2.0-flash")
 
-# --- トークン更新・セクション取得関数は変更なしのため省略 ---
+# --- トークン更新・セクション取得関数 ---
+def refresh_access_token():
+    if not REFRESH_TOKEN or not CLIENT_ID or not CLIENT_SECRET:
+        raise Exception("環境変数が未設定です")
+    url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+    data = {
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "refresh_token": REFRESH_TOKEN,
+        "grant_type": "refresh_token",
+    }
+    res = requests.post(url, data=data)
+    token_data = res.json()
+    if res.status_code != 200:
+        raise Exception(f"トークン更新失敗: {token_data}")
+    return token_data["access_token"]
 
+def get_section_id(access_token, section_name):
+    url = "https://graph.microsoft.com/v1.0/me/onenote/sections"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    res = requests.get(url, headers=headers)
+    data = res.json()
+    for section in data.get("value", []):
+        if section.get("displayName") == section_name:
+            return section.get("id")
+    raise Exception(f"セクションが見つかりません: {section_name}")
+
+def get_random_pages(access_token, section_id, count=5):
+    """ページ一覧を取得し、ランダムに指定件数返す (idが必要なので追加)"""
+    url = f"https://graph.microsoft.com/v1.0/me/onenote/sections/{section_id}/pages?$select=id,title,links"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    res = requests.get(url, headers=headers)
+    pages = res.json().get("value", [])
+    
+    if not pages:
+        return []
+    
+    return random.sample(pages, min(len(pages), count))
+
+
+#Geminiでアウトライン
 def get_outline_from_gemini(title):
     """Gemini APIを使用してアウトラインを生成"""
     try:
@@ -134,4 +173,37 @@ def build_flex_carousel(access_token, pages):
 
     return {"type": "carousel", "contents": bubbles}
 
-# --- send_line_flex, main 関数は変更なし ---
+# --- send_line_flex, main 関数 ---
+def send_line_flex(flex_content):
+    url = "https://api.line.me/v2/bot/message/push"
+    headers = {
+        "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "to": LINE_USER_ID,
+        "messages": [{"type": "flex", "altText": "本日のブログネタ", "contents": flex_content}],
+    }
+    res = requests.post(url, headers=headers, json=payload)
+    if res.status_code != 200:
+        print(f"LINE送信失敗: {res.text}")
+
+def main():
+    try:
+        token = refresh_access_token()
+        sec_id = get_section_id(token, TARGET_SECTION_NAME)
+        random_pages = get_random_pages(token, sec_id, count=5)
+        
+        if not random_pages:
+            print("ページが見つかりませんでした。")
+            return
+
+        # access_tokenを引数に追加
+        flex = build_flex_carousel(token, random_pages)
+        send_line_flex(flex)
+        print("処理が正常に完了しました。")
+    except Exception as e:
+        print(f"エラー発生: {e}")
+
+if __name__ == "__main__":
+    main()
