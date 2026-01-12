@@ -166,8 +166,8 @@ def build_flex_carousel(access_token, pages):
             #             "style": "secondary",
             #             "action": {"type": "uri", "label": "構成案を確認(OneNote)", "uri": onenote_url}
             #         }
-                ]
-            }
+                # ]
+            # }
         }
         bubbles.append(bubble)
 
