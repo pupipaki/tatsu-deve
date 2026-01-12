@@ -156,19 +156,19 @@ def build_flex_carousel(access_token, pages):
                 "layout": "vertical",
                 "spacing": "sm",
                 "contents": [
-                    # {
-                    #     "type": "button",
-                    #     "style": "primary",
-                    #     "color": "#1DB446",
-                    #     "height": "sm",
-                    #     "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}
-                    # },
-                    # {
-                    #     "type": "button",
-                    #     "style": "secondary",
-                    #     "height": "sm",
-                    #     "action": {"type": "uri", "label": "ブラウザで構成確認", "uri": onenote_web_url}
-                    # },
+                    {
+                        "type": "button",
+                        "style": "primary",
+                        "color": "#1DB446",
+                        "height": "sm",
+                        "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}
+                    },
+                    {
+                        "type": "button",
+                        "style": "secondary",
+                        "height": "sm",
+                        "action": {"type": "uri", "label": "ブラウザ", "uri": "https://www.onenote.com/notebooks"}
+                    },
                     {
                         "type": "button",
                         "style": "link",
@@ -176,7 +176,7 @@ def build_flex_carousel(access_token, pages):
                         "action": {
                             "type": "uri", 
                             "label": "OneNoteアプリを起動", 
-                            "uri": "onenote:" 
+                            "uri": f"{onenote_web_url}&open=external" 
                         }
                     }
                 ]
