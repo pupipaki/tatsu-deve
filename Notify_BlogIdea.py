@@ -191,7 +191,7 @@ def send_line_flex(flex_content):
 def main():
     try:
         token = refresh_access_token()
-        sec_id = get_section_id(token, TARGET_SECTION_NAME)
+        sec_id = get_section_id(token, TARGET_SECTION_KEYWORD)
         random_pages = get_random_pages(token, sec_id, count=5)
         
         if not random_pages:
