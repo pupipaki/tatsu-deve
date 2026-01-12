@@ -150,22 +150,22 @@ def build_flex_carousel(access_token, pages):
                     {"type": "text", "text": "※詳細はOneNoteに追記済み", "size": "xxs", "color": "#aaaaaa", "margin": "md"}
                 ]
             },
-            "footer": {
-                "type": "box",
-                "layout": "vertical",
-                "spacing": "sm",
-                "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#1DB446",
-                        "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}
-                    },
-                    {
-                        "type": "button",
-                        "style": "secondary",
-                        "action": {"type": "uri", "label": "構成案を確認(OneNote)", "uri": onenote_url}
-                    }
+            # "footer": {
+            #     "type": "box",
+            #     "layout": "vertical",
+            #     "spacing": "sm",
+            #     "contents": [
+            #         {
+            #             "type": "button",
+            #             "style": "primary",
+            #             "color": "#1DB446",
+            #             "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}
+            #         },
+            #         {
+            #             "type": "button",
+            #             "style": "secondary",
+            #             "action": {"type": "uri", "label": "構成案を確認(OneNote)", "uri": onenote_url}
+            #         }
                 ]
             }
         }
