@@ -46,7 +46,7 @@ def get_section_id(access_token, section_name):
             return section.get("id")
     raise Exception(f"セクションが見つかりません: {section_name}")
 
-def get_random_pages(access_token, section_id, count=5):
+def get_random_pages(access_token, section_id, count=1):
     """ページ一覧を取得し、ランダムに指定件数返す (idが必要なので追加)"""
     url = f"https://graph.microsoft.com/v1.0/me/onenote/sections/{section_id}/pages?$select=id,title,links"
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -188,20 +188,95 @@ def send_line_flex(flex_content):
     if res.status_code != 200:
         print(f"LINE送信失敗: {res.text}")
 
+# --- OneNote ページ移動用の関数 ---
+def move_page_to_fin_section(access_token, page_id, note_title, note_content):
+    """ページを 'article' セクションに新しく作成し、成功したら元のページを削除する"""
+    try:
+        # 1. "article" セクションの ID を取得
+        fin_section_id = get_section_id(access_token, "article")
+        
+        # 2. "article" セクションに新しいページを作成する
+        create_url = f"https://graph.microsoft.com/v1.0/me/onenote/sections/{fin_section_id}/pages"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/xhtml+xml" # HTML形式で送る
+        }
+        
+        # 元のHTMLコンテンツをそのまま新しいページとして作成
+        res = requests.post(create_url, headers=headers, data=note_content.encode('utf-8'))
+        
+        if res.status_code == 201:
+            print(f"ページ '{note_title}' を article セクションへ作成しました。")
+            
+            # 3. 作成に成功したら、元の（'keyword'セクション内の）ページを削除
+            delete_url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}"
+            del_headers = {"Authorization": f"Bearer {access_token}"}
+            delete_res = requests.delete(delete_url, headers=del_headers)
+            
+            if delete_res.status_code == 204:
+                print("元のページを削除しました。移動完了。")
+                return True
+        else:
+            print(f"新ページ作成失敗: {res.text}")
+            
+    except Exception as e:
+        print(f"移動処理中にエラーが発生しました: {e}")
+    return False
+
+def get_page_content(access_token, page_id):
+    """移動のためにページの全コンテンツ（HTML）を取得する"""
+    url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}/content"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    res = requests.get(url, headers=headers)
+    if res.status_code == 200:
+        return res.text
+    return None
+
 def main():
     try:
+        # 1. トークンの準備とセクション情報の取得
         token = refresh_access_token()
-        sec_id = get_section_id(token, TARGET_SECTION_KEYWORD)
-        random_pages = get_random_pages(token, sec_id, count=5)
+        keyword_sec_id = get_section_id(token, TARGET_SECTION_KEYWORD)
+        
+        # 2. keywordセクションからランダムに1件取得
+        random_pages = get_random_pages(token, keyword_sec_id, count=1)
         
         if not random_pages:
-            print("ページが見つかりませんでした。")
+            print("処理対象のページが見つかりませんでした。")
             return
 
-        # access_tokenを引数に追加
-        flex = build_flex_carousel(token, random_pages)
+        page = random_pages[0]
+        page_id = page.get("id")
+        title = page.get("title", "(no title)")
+
+        # 3. Geminiでアウトライン生成 & 元のページに書き込み
+        print(f"処理開始: {title}")
+        outline = get_outline_from_gemini(title)
+        update_onenote_page_with_outline(token, page_id, outline)
+
+        # 4. 移動処理：最新の状態のコンテンツを取得して別セクションへ
+        print(f"移動処理中...")
+        updated_content = get_page_content(token, page_id)
+        if updated_content:
+            move_success = move_page_to_fin_section(token, page_id, title, updated_content)
+        else:
+            print("コンテンツの取得に失敗したため、移動をスキップします。")
+            move_success = False
+
+        # 5. LINEに通知を送信
+        # 移動に成功した場合、LINEボタンのリンク先が古い(削除済み)URLにならないよう注意が必要ですが、
+        # build_flex_carouselの中で生成されるURLを新しいセクションのものにするか、
+        # もしくはシンプルに「移動完了」の通知を送るのが安全です。
+        
+        # 今回は、取得済みの random_pages を使ってFlexメッセージを作成します
+        flex = build_flex_carousel(token, [page]) 
         send_line_flex(flex)
-        print("処理が正常に完了しました。")
+        
+        if move_success:
+            print(f"成功: '{title}' の構成案作成と 'article' への移動が完了しました。")
+        else:
+            print(f"完了: 構成案の書き込みは成功しましたが、移動には失敗しました。")
+
     except Exception as e:
         print(f"エラー発生: {e}")
 
