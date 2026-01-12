@@ -107,12 +107,14 @@ def normalize_title(title, max_len=40):
     t = title.strip()
     return (t[:max_len-1] + "…") if len(t) > max_len else t
 
+
 def build_flex_carousel(access_token, pages):
     bubbles = []
     for page in pages:
         page_id = page.get("id")
         title = page.get("title", "(no title)")
-        onenote_url = page.get("links", {}).get("oneNoteWebUrl", {}).get("href", "#")
+        # Web版のURL（ブラウザで開く用）
+        onenote_web_url = page.get("links", {}).get("oneNoteWebUrl", {}).get("href", "#")
         
         # 1. Geminiでアウトライン生成
         outline = get_outline_from_gemini(title)
@@ -120,8 +122,7 @@ def build_flex_carousel(access_token, pages):
         # 2. OneNoteに書き込み
         update_onenote_page_with_outline(access_token, page_id, outline)
 
-        # 3. LINE表示用に「最新の課題」部分だけを抽出（プレビュー用）
-        # 冒頭から最初の見出しまで、あるいは最初の100文字程度
+        # 3. LINE表示用のプレビューテキスト
         preview_text = outline.split('\n')[0] if outline else "アウトラインを作成しました。"
         if len(preview_text) > 60:
             preview_text = preview_text[:60] + "..."
@@ -150,24 +151,36 @@ def build_flex_carousel(access_token, pages):
                     {"type": "text", "text": "※詳細はOneNoteに追記済み", "size": "xxs", "color": "#aaaaaa", "margin": "md"}
                 ]
             },
-            # "footer": {
-            #     "type": "box",
-            #     "layout": "vertical",
-            #     "spacing": "sm",
-            #     "contents": [
-            #         {
-            #             "type": "button",
-            #             "style": "primary",
-            #             "color": "#1DB446",
-            #             "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}
-            #         },
-            #         {
-            #             "type": "button",
-            #             "style": "secondary",
-            #             "action": {"type": "uri", "label": "構成案を確認(OneNote)", "uri": onenote_url}
-            #         }
-                # ]
-            # }
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    # {
+                    #     "type": "button",
+                    #     "style": "primary",
+                    #     "color": "#1DB446",
+                    #     "height": "sm",
+                    #     "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}
+                    # },
+                    # {
+                    #     "type": "button",
+                    #     "style": "secondary",
+                    #     "height": "sm",
+                    #     "action": {"type": "uri", "label": "ブラウザで構成確認", "uri": onenote_web_url}
+                    # },
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri", 
+                            "label": "OneNoteアプリを起動", 
+                            "uri": "onenote:" 
+                        }
+                    }
+                ]
+            }
         }
         bubbles.append(bubble)
 
@@ -182,7 +195,7 @@ def send_line_flex(flex_content):
     }
     payload = {
         "to": LINE_USER_ID,
-        "messages": [{"type": "flex", "altText": "本日のブログネタ", "contents": flex_content}],
+        "messages": [{"type": "flex", "altText": "keyword to article", "contents": flex_content}],
     }
     res = requests.post(url, headers=headers, json=payload)
     if res.status_code != 200:
