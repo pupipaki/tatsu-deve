@@ -17,7 +17,7 @@ TARGET_SECTION = os.getenv("movネタ")
 WORDPRESS_NEW_POST_URL_BASE = os.getenv("WORDPRESS_NEW_POST_URL_BASE", "https://example.com/wp-admin/post-new.php")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel(model_name="gemini-2.5-flash")
+model = genai.GenerativeModel(model_name="gemini-2.5-flash") # 最新の名前に適宜調整してください
 
 # --- トークン更新・セクション取得関数 ---
 def refresh_access_token():
@@ -47,26 +47,53 @@ def get_section_id(access_token, section_name):
     raise Exception(f"セクションが見つかりません: {section_name}")
 
 def get_random_pages(access_token, section_id, count=1):
-    """ページ一覧を取得し、ランダムに指定件数返す (idが必要なので追加)"""
     url = f"https://graph.microsoft.com/v1.0/me/onenote/sections/{section_id}/pages?$select=id,title,links"
     headers = {"Authorization": f"Bearer {access_token}"}
     res = requests.get(url, headers=headers)
     pages = res.json().get("value", [])
-    
     if not pages:
         return []
-    
     return random.sample(pages, min(len(pages), count))
 
+def get_page_content(access_token, page_id):
+    """ページの全コンテンツ（HTML）を取得する"""
+    url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}/content"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    res = requests.get(url, headers=headers)
+    if res.status_code == 200:
+        return res.text
+    return None
 
-#Geminiでアウトライン
-def get_outline_from_gemini(title):
-    """Gemini APIを使用してアウトラインを生成"""
+def extract_text_from_html(html_content):
+    """HTMLからテキストのみを抽出（簡易版）"""
+    if not html_content:
+        return ""
+    # タグの除去
+    text = re.sub(r'<[^>]+>', ' ', html_content)
+    # 連続する空白や改行を整理
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+# --- Geminiでアウトライン ---
+def get_outline_from_gemini(title, content):
+    """Gemini APIを使用してタイトルと内容からアウトラインを生成"""
     try:
         prompt = f"""
-        OneNoteのmovネタページの内容の各シーンのアウトラインを出力し、それぞれのシーンについて画像生成AIで作成するプロンプトを出力してください。ショート動画全体は20秒程度、各シーンは5秒程度で、シーン数の合計は４～５を想定しています。
+以下のOneNoteにメモされた「タイトル」と「内容」を元に、ショート動画（YouTube Shorts/TikTok）の構成案を作成してください。
 
-#出力フォーマット
+# ページタイトル
+{title}
+
+# ページの内容（ネタ詳細）
+{content}
+
+# 指示
+- 各シーンのアウトラインを出力してください。
+- それぞれのシーンについて画像生成AI（Midjourney）で使える英語のプロンプトを出力してください。
+- 動画全体は20秒程度、各シーンは5秒程度。
+- シーン数は4～5つ。
+
+# 出力フォーマット
 -シーン1の名称
 -シーン1の説明
 -シーン1のプロンプト
@@ -86,10 +113,7 @@ def update_onenote_page_with_outline(access_token, page_id, outline_text):
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
-    
-    # 改行をHTMLの改行タグに変換
     formatted_content = outline_text.replace("\n", "<br />")
-    
     changes = [
         {
             'target': 'body',
@@ -100,7 +124,6 @@ def update_onenote_page_with_outline(access_token, page_id, outline_text):
                        f'<p>{formatted_content}</p></div>'
         }
     ]
-    
     res = requests.patch(url, headers=headers, data=json.dumps(changes))
     return res.status_code == 204
 
@@ -108,23 +131,14 @@ def normalize_title(title, max_len=40):
     t = title.strip()
     return (t[:max_len-1] + "…") if len(t) > max_len else t
 
-
-def build_flex_carousel(access_token, pages):
+def build_flex_carousel(access_token, pages, outline_text):
+    """LINE Flex Messageの構築"""
     bubbles = []
     for page in pages:
-        page_id = page.get("id")
         title = page.get("title", "(no title)")
-        # Web版のURL（ブラウザで開く用）
         onenote_web_url = page.get("links", {}).get("oneNoteWebUrl", {}).get("href", "#")
         
-        # 1. Geminiでアウトライン生成
-        outline = get_outline_from_gemini(title)
-
-        # 2. OneNoteに書き込み
-        update_onenote_page_with_outline(access_token, page_id, outline)
-
-        # 3. LINE表示用のプレビューテキスト
-        preview_text = outline.split('\n')[0] if outline else "アウトラインを作成しました。"
+        preview_text = outline_text.split('\n')[0] if outline_text else "アウトラインを作成しました。"
         if len(preview_text) > 60:
             preview_text = preview_text[:60] + "..."
 
@@ -157,102 +171,42 @@ def build_flex_carousel(access_token, pages):
                 "layout": "vertical",
                 "spacing": "sm",
                 "contents": [
-                    {
-                        "type": "button",
-                        "style": "primary",
-                        "color": "#1DB446",
-                        "height": "sm",
-                        "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}
-                    },
-                    {
-                        "type": "button",
-                        "style": "secondary",
-                        "height": "sm",
-                        "action": {"type": "uri", "label": "ブラウザ", "uri": onenote_web_url}
-                    },
-                    {
-                        "type": "button",
-                        "style": "link",
-                        "height": "sm",
-                        "action": {
-                            "type": "uri", 
-                            "label": "OneNoteアプリを起動", 
-                            "uri": "intent://onenote/#Intent;scheme=onenote;package=com.microsoft.office.onenote;S.browser_fallback_url=https%3A%2F%2Fplay.google.com%2Fstore%2Fapps%2Fdetails%3Fid%3Dcom.microsoft.office.onenote;end" 
-                        }
-                    }
+                    {"type": "button", "style": "primary", "color": "#1DB446", "height": "sm", "action": {"type": "uri", "label": "WordPressで執筆", "uri": wp_url}},
+                    {"type": "button", "style": "secondary", "height": "sm", "action": {"type": "uri", "label": "ブラウザでOneNote", "uri": onenote_web_url}}
                 ]
             }
         }
         bubbles.append(bubble)
-
     return {"type": "carousel", "contents": bubbles}
 
-# --- send_line_flex, main 関数 ---
 def send_line_flex(flex_content):
     url = "https://api.line.me/v2/bot/message/push"
-    headers = {
-        "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "to": LINE_USER_ID,
-        "messages": [{"type": "flex", "altText": "keyword to article", "contents": flex_content}],
-    }
+    headers = {"Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}", "Content-Type": "application/json"}
+    payload = {"to": LINE_USER_ID, "messages": [{"type": "flex", "altText": "動画アウトライン生成完了", "contents": flex_content}]}
     res = requests.post(url, headers=headers, json=payload)
     if res.status_code != 200:
         print(f"LINE送信失敗: {res.text}")
 
-# --- OneNote ページ移動用の関数 ---
 def move_page_to_fin_section(access_token, page_id, note_title, note_content):
-    """ページを 'ショート案' セクションに新しく作成し、成功したら元のページを削除する"""
     try:
-        # 1. "ショート案" セクションの ID を取得
         fin_section_id = get_section_id(access_token, "ショート案")
-        
-        # 2. "ショート案" セクションに新しいページを作成する
         create_url = f"https://graph.microsoft.com/v1.0/me/onenote/sections/{fin_section_id}/pages"
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/xhtml+xml" # HTML形式で送る
-        }
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/xhtml+xml"}
         
-        # 元のHTMLコンテンツをそのまま新しいページとして作成
         res = requests.post(create_url, headers=headers, data=note_content.encode('utf-8'))
-        
         if res.status_code == 201:
-            print(f"ページ '{note_title}' を ショート案 セクションへ作成しました。")
-            
-            # 3. 作成に成功したら、元の（'movネタ'セクション内の）ページを削除
             delete_url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}"
-            del_headers = {"Authorization": f"Bearer {access_token}"}
-            delete_res = requests.delete(delete_url, headers=del_headers)
-            
-            if delete_res.status_code == 204:
-                print("元のページを削除しました。移動完了。")
-                return True
-        else:
-            print(f"新ページ作成失敗: {res.text}")
-            
+            requests.delete(delete_url, headers={"Authorization": f"Bearer {access_token}"})
+            return True
     except Exception as e:
-        print(f"移動処理中にエラーが発生しました: {e}")
+        print(f"移動エラー: {e}")
     return False
 
-def get_page_content(access_token, page_id):
-    """移動のためにページの全コンテンツ（HTML）を取得する"""
-    url = f"https://graph.microsoft.com/v1.0/me/onenote/pages/{page_id}/content"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    res = requests.get(url, headers=headers)
-    if res.status_code == 200:
-        return res.text
-    return None
-
+# --- メイン処理 ---
 def main():
     try:
-        # 1. トークンの準備とセクション情報の取得
         token = refresh_access_token()
         keyword_sec_id = get_section_id(token, TARGET_SECTION)
-        
-        # 2. keywordセクションからランダムに1件取得
         random_pages = get_random_pages(token, keyword_sec_id, count=1)
         
         if not random_pages:
@@ -262,34 +216,28 @@ def main():
         page = random_pages[0]
         page_id = page.get("id")
         title = page.get("title", "(no title)")
-
-        # 3. Geminiでアウトライン生成 & 元のページに書き込み
         print(f"処理開始: {title}")
-        outline = get_outline_from_gemini(title)
+
+        # 1. ページ内容を取得
+        html_content = get_page_content(token, page_id)
+        # Geminiに渡すためにテキスト化
+        plain_text_content = extract_text_from_html(html_content)
+
+        # 2. Geminiでアウトライン生成 (タイトルと内容を渡す)
+        outline = get_outline_from_gemini(title, plain_text_content)
+
+        # 3. 元のページに書き込み
         update_onenote_page_with_outline(token, page_id, outline)
 
-        # 4. 移動処理：最新の状態のコンテンツを取得して別セクションへ
-        print(f"移動処理中...")
+        # 4. 移動処理 (最新の内容を取得し直して移動)
         updated_content = get_page_content(token, page_id)
-        if updated_content:
-            move_success = move_page_to_fin_section(token, page_id, title, updated_content)
-        else:
-            print("コンテンツの取得に失敗したため、移動をスキップします。")
-            move_success = False
+        move_success = move_page_to_fin_section(token, page_id, title, updated_content)
 
-        # 5. LINEに通知を送信
-        # 移動に成功した場合、LINEボタンのリンク先が古い(削除済み)URLにならないよう注意が必要ですが、
-        # build_flex_carouselの中で生成されるURLを新しいセクションのものにするか、
-        # もしくはシンプルに「移動完了」の通知を送るのが安全です。
-        
-        # 今回は、取得済みの random_pages を使ってFlexメッセージを作成します
-        flex = build_flex_carousel(token, [page]) 
+        # 5. LINEに通知
+        flex = build_flex_carousel(token, [page], outline) 
         send_line_flex(flex)
         
-        if move_success:
-            print(f"成功: '{title}' の構成案作成と 'article' への移動が完了しました。")
-        else:
-            print(f"完了: 構成案の書き込みは成功しましたが、移動には失敗しました。")
+        print(f"成功: '{title}' の構成案作成が完了しました。(移動: {move_success})")
 
     except Exception as e:
         print(f"エラー発生: {e}")
