@@ -45,4 +45,4 @@ jobs:
           WORDPRESS_NEW_POST_URL_BASE: "https://example.com/wp-admin/post-new.php"
         run: |
           . .venv/bin/activate
-          python AImov.py
+          python AImov_outline.py
