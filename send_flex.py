@@ -1,3 +1,5 @@
+#ミスチルなどのキーワードと、ジャンルを掛け合わせてリード文を自動生成する
+
 import os
 import requests
 import json
@@ -83,7 +85,28 @@ def create_onenote_page(access_token, section_id, title, content):
 # ② Gemini API でアウトライン作成
 # -----------------------------
 def get_ai_outline(keyword):
-    prompt = f"{keyword}というキーワードとともに検索されそうなキーワードとともにブログネタのアウトラインを考えてください"
+    # prompt = f"{keyword}というキーワードとともに検索されそうなキーワードとともにブログネタのアウトラインを考えてください"
+    prompt = f"{keyword}というキーワードとジャンルをもとに、noteで500円の有料記事を作成します。
+ジャンルは、旅行・AI・テーマパーク・人間関係・40代の中から１つ選びます。
+下記のアウトラインを踏まえたリード文を作成してください。
+
+【アウトライン】
+１．Problem　：読者が抱える具体的な悩みや課題
+２．Affinity　：「私も同じでした」という共感エピソード
+３．Solution　：具体的な解決方法を３つ提供
+４．Offer　：今すぐできるアクションステップ
+５．Narrowing down　：「こんな人に特におすすめ」を明確化
+６．Action　：読者への具体的な行動喚起
+    
+【条件】
+-リード文は500字以内
+-可能な場合、リード文に関連のある商品を楽天アフェリエイトで提示する
+-文章は酷者に親しみやすい口調
+-リード文とは別にアイキャッチ画像のために画像生成のプロンプトを記載する
+-SEOを反映した魅力的なタイトルを提示する
+-ブログ記事をXで告知するための告知文を提示する"
+    
+
     try:
         response = model.generate_content(prompt)
         return response.text
