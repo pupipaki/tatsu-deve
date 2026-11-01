@@ -1,0 +1,73 @@
+# 家の外からURLを毎時チェックし、開けなければLINEに通知する見張り番
+# 置き場所：privateリポジトリの .github/workflows/uptime-check.yml
+#
+# 事前に登録するもの（リポジトリの Settings → Secrets and variables → Actions）
+#   Secrets   LINE_CHANNEL_ACCESS_TOKEN … LINE Messaging API のチャネルアクセストークン
+#   Secrets   LINE_USER_ID              … 通知を受け取る自分のユーザーID
+#   Variables CHECK_URLS                … 見張るURL（1行に1つ）
+
+name: uptime-check
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # 毎時17分（UTC）。毎時0分は混み合って遅れやすいのでずらす
+  workflow_dispatch:
+    inputs:
+      test_notify:
+        description: "テスト通知を送る（LINEが届くかの確認用）"
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: URLを外から確認する
+        id: check
+        env:
+          CHECK_URLS: ${{ vars.CHECK_URLS }}
+        run: |
+          failed=""
+          while IFS= read -r url; do
+            url="$(echo "$url" | xargs)"          # 前後の空白を除く
+            [ -z "$url" ] && continue
+            ok=0
+            for i in 1 2 3; do                    # 一瞬の不調で鳴らないよう3回まで試す
+              code=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 20 "$url") || true
+              code="${code:-000}"                 # つながらない・証明書エラーは 000 になる
+              if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then ok=1; break; fi
+              sleep 20
+            done
+            if [ "$ok" -eq 1 ]; then
+              echo "OK   $url ($code)"
+            else
+              echo "NG   $url ($code)"
+              failed="${failed}${url} (${code})"$'\n'
+            fi
+          done <<< "$CHECK_URLS"
+          {
+            echo "failed<<EOF"
+            printf "%s" "$failed"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 開けなかったらLINEに通知する
+        if: steps.check.outputs.failed != '' || inputs.test_notify == true
+        env:
+          TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.LINE_USER_ID }}
+          FAILED: ${{ steps.check.outputs.failed }}
+          TEST: ${{ inputs.test_notify }}
+        run: |
+          if [ -n "$FAILED" ]; then
+            text=$(printf "【外から見えません】\n%s\n（GitHub Actionsの見張り番より）" "$FAILED")
+          else
+            text="【テスト】見張り番からの通知は正常に届いています"
+          fi
+          body=$(jq -n --arg to "$USER_ID" --arg text "$text" \
+            '{to: $to, messages: [{type: "text", text: $text}]}')
+          curl -sS -f -X POST https://api.line.me/v2/bot/message/push \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $TOKEN" \
+            -d "$body"
