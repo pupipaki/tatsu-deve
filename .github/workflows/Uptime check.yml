@@ -10,7 +10,7 @@ name: uptime-check
 
 on:
   schedule:
-    - cron: "17 * * * *"   # 毎時17分（UTC）。毎時0分は混み合って遅れやすいのでずらす
+    - cron: "17 7 * * 6"   # 毎時17分（UTC）。毎時0分は混み合って遅れやすいのでずらす
   workflow_dispatch:
     inputs:
       test_notify:
