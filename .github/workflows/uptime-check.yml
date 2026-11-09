@@ -1,0 +1,141 @@
+# 家の外からURLを30分おきにチェックし、「止まったとき」と「復旧したとき」だけLINEに通知する見張り番
+# 置き場所：privateリポジトリの .github/workflows/uptime-check.yml
+#
+# 事前に登録するもの（リポジトリの Settings → Secrets and variables → Actions）
+#   Secrets   LINE_CHANNEL_ACCESS_TOKEN … LINE Messaging API のチャネルアクセストークン
+#   Secrets   LINE_USER_ID              … 通知を受け取る自分のユーザーID
+#   Variables CHECK_URLS                … 見張るURL（1行に1つ）
+#
+# 通知のルール（障害1回につき2通だけ）
+#   前回OK → 今回NG … 「止まりました」を1通（NGのURLをまとめて1通に書く）
+#   前回NG → 今回OK … 「復旧しました」を1通（止まっていた時間つき）
+#   前回と同じ      … 何も送らない（止まっている間の再通知もしない）
+# 前回の状態はリポジトリの .state/last.json に保存する（状態が変わったときだけコミット）。
+# last.json がない最初の回は「前回OK」として扱う。
+
+name: uptime-check
+
+on:
+  schedule:
+    - cron: "17,47 * * * *"   # 毎時17分と47分（30分おき）。毎時0分は混み合って遅れやすいのでずらす
+  workflow_dispatch:
+    inputs:
+      test_notify:
+        description: "テスト通知を送る（LINEが届くかの確認用。状態は変えない）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write            # .state/last.json をコミットするため
+
+concurrency:
+  group: uptime-check        # 2回が同時に動いて状態が食い違わないよう、1回ずつ順番に動かす
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 前回の状態を読むためにリポジトリを取ってくる
+        uses: actions/checkout@v4
+
+      - name: URLを外から確認する
+        env:
+          CHECK_URLS: ${{ vars.CHECK_URLS }}
+        run: |
+          # 1本のURLを最大3回試す（一瞬の不調で鳴らないように）。全部だめなら NG ファイルに書く
+          check_one() {
+            local url=$1 out=$2 i rc code
+            for i in 1 2 3; do
+              rc=0
+              code=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 15 "$url") || rc=$?
+              code="${code:-000}"                 # つながらない・証明書エラーは 000 になる
+              if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+                echo "OK   $url ($code)"; return 0
+              fi
+              if [ "$i" -lt 3 ]; then sleep 10; fi
+            done
+            # rc: 3=URLの書式 6=名前解決できない 7=接続できない 28=時間切れ 35/60=証明書・暗号化
+            echo "NG   $url (HTTP $code / curl $rc)"
+            echo "$url (HTTP $code / curl $rc)" > "$out"
+          }
+
+          mkdir -p "$RUNNER_TEMP/ng"
+          n=0
+          while IFS= read -r url; do
+            url="$(printf '%s' "$url" | tr -d '\r' | xargs)"   # Windowsの改行(\r)と前後の空白を除く
+            [ -z "$url" ] && continue
+            n=$((n + 1))
+            check_one "$url" "$RUNNER_TEMP/ng/$(printf '%03d' "$n")" &   # 全URLを同時に確認（全部止まっていても約1分で終わる）
+          done <<< "$CHECK_URLS"
+          wait
+          if [ "$n" -eq 0 ]; then echo "CHECK_URLS が空です。Variables に見張るURLを登録してください"; exit 1; fi
+          cat "$RUNNER_TEMP"/ng/* > "$RUNNER_TEMP/ng.txt" 2>/dev/null || true
+
+      - name: 前回と比べて、変わったときだけLINEに通知する
+        id: notify
+        env:
+          TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          USER_ID: ${{ secrets.LINE_USER_ID }}
+          TEST: ${{ inputs.test_notify }}
+        run: |
+          STATE=.state/last.json
+          NG_FILE="$RUNNER_TEMP/ng.txt"
+
+          send() {   # 何通分のURLがあっても、1回のリクエスト＝1通
+            local body
+            body=$(jq -n --arg to "$USER_ID" --arg text "$1" '{to: $to, messages: [{type: "text", text: $text}]}')
+            curl -sS -f -X POST https://api.line.me/v2/bot/message/push \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $TOKEN" \
+              -d "$body" > /dev/null
+            echo "LINEに送りました"
+          }
+          jst() { TZ=Asia/Tokyo date -d "@$1" '+%m/%d %H:%M'; }
+
+          prev=$(jq -r '.status // "OK"' "$STATE" 2>/dev/null || echo "OK")   # 最初の回は OK 扱い
+          if [ -s "$NG_FILE" ]; then cur="NG"; else cur="OK"; fi
+          now=$(date -u +%s)
+          echo "前回: $prev / 今回: $cur"
+
+          if [ "$TEST" = "true" ]; then
+            send "【テスト】見張り番からの通知は正常に届いています（今回の確認結果: $cur）"
+          fi
+
+          changed=0
+          if [ "$prev" = "OK" ] && [ "$cur" = "NG" ]; then
+            send "$(printf '【止まりました】家の外から開けないURLがあります\n%s\n\n見つけた時刻: %s\n復旧したら、もう1通だけ届きます。\n（GitHub Actionsの見張り番より）' \
+              "$(cat "$NG_FILE")" "$(jst "$now")")"
+            mkdir -p .state
+            jq -n --argjson since "$now" --rawfile ng "$NG_FILE" \
+              '{status: "NG", since: $since, ng: ($ng | split("\n") | map(select(. != "")))}' > "$STATE"
+            changed=1
+
+          elif [ "$prev" = "NG" ] && [ "$cur" = "OK" ]; then
+            since=$(jq -r '.since // empty' "$STATE")
+            since=${since:-$now}
+            mins=$(( (now - since) / 60 ))
+            if [ "$mins" -ge 60 ]; then dur="約$((mins / 60))時間$((mins % 60))分"; else dur="約${mins}分"; fi
+            send "$(printf '【復旧しました】すべてのURLが外から開けるようになりました\n止まっていた時間: %s（NGを見つけた %s → 復旧を確認した %s）\n止まっていたURL:\n%s\n（GitHub Actionsの見張り番より）' \
+              "$dur" "$(jst "$since")" "$(jst "$now")" "$(jq -r '.ng[]' "$STATE")")"
+            jq -n --argjson since "$now" '{status: "OK", since: $since, ng: []}' > "$STATE"
+            changed=1
+
+          else
+            echo "状態は前回と同じなので、LINEは送りません"
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "summary=$prev → $cur" >> "$GITHUB_OUTPUT"
+
+      - name: 状態が変わったときだけ .state/last.json を保存する
+        if: steps.notify.outputs.changed == '1'
+        env:
+          SUMMARY: ${{ steps.notify.outputs.summary }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .state/last.json
+          git commit -m "uptime-check: $SUMMARY"
+          git pull --rebase --quiet
+          git push
