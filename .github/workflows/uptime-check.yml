@@ -13,7 +13,7 @@
 # 前回の状態はリポジトリの .state/last.json に保存する（状態が変わったときだけコミット）。
 # last.json がない最初の回は「前回OK」として扱う。
 
-name: uptime-check
+name: uptime-check_test
 
 on:
   schedule:
